@@ -1,8 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-
 const cwd =  process.cwd();
+
+
 
 async function walk(dir){
 	let files = [];
@@ -25,8 +26,6 @@ async function walk(dir){
 async function copyPublic(config){
 	const publicPath = path.join(config.root, config.public);
 	const files = await walk(publicPath);
-
-	const relative = path.relative(publicPath, cwd);
 	
 	for (const file of files){
 		const target = path.join(config.dest, file.replace(publicPath, ""));
