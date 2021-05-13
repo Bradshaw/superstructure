@@ -4,6 +4,7 @@ const path = require('path');
 const sass = require('node-sass');
 const pug = require('pug');
 const YAML = require('yaml')
+const sharp = require('sharp');
 const md = require('markdown-it')({
 	html: true,
 	breaks: true,
@@ -40,11 +41,26 @@ async function copyPublic(config){
 		const targetdir = path.parse(target).dir;
 		fs.mkdir(targetdir, { recursive: true })
 			.then(()=>{
-				// console.log(`Copy ${file} to ${target}`);
 				fs.copyFile(file, target)
 			});
 	}
-	
+}
+
+async function crunchImages(config){
+	const publicPath = path.join(config.root, config.public);
+	const files = await walk(publicPath);
+	for (const file of files){
+		const ext = path.extname(file);
+		if (config.crunch.includes(ext)){
+			const target = path.join(config.dest, file.replace(publicPath, "").replace(ext,".700w.jpg"));
+			const targetdir = path.parse(target).dir;
+			const crunched = await sharp(file)
+				.resize(700)
+				.jpeg()
+				.toBuffer()
+			fs.writeFile(target,  crunched);
+		}
+	}
 }
 
 async function compileCss(config){
@@ -81,7 +97,6 @@ async function compileHtml(config, templates){
 		const targetdir = path.parse(target).dir;
 		fs.mkdir(targetdir, { recursive: true })
 			.then(async ()=>{
-				console.log(`Compile ${file} to ${target}`);
 				const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
 				const metadata = yaml ? YAML.parse(yaml) : {};
 				const article = md.render(markdown);
@@ -130,10 +145,10 @@ let superstructure = {
 	build: async (config)=>{
 		try{
 			const templates = (await getTemplates(config));
-			console.log(templates);
-			await copyPublic(config);
-			await compileCss(config);
-			await compileHtml(config, templates);
+			copyPublic(config);
+			crunchImages(config);
+			compileCss(config);
+			compileHtml(config, templates);
 		} catch (err) {
 			console.error(err);
 		}
