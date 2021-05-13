@@ -3,6 +3,7 @@ const path = require('path');
 
 const sass = require('node-sass');
 const pug = require('pug');
+const YAML = require('yaml')
 const md = require('markdown-it')({
 	html: true,
 	breaks: true,
@@ -82,10 +83,10 @@ async function compileHtml(config, templates){
 			.then(async ()=>{
 				console.log(`Compile ${file} to ${target}`);
 				const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
-				console.log(yaml);
+				const metadata = yaml ? YAML.parse(yaml) : {};
 				const article = md.render(markdown);
-				const html = templates.layout({
-					title: "A page",
+				const html = templates[metadata.layout ? metadata.layout : "layout"]({
+					title: metadata.title,
 					content: article
 				})
 				fs.writeFile(target, html);
