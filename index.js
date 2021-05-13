@@ -1,9 +1,13 @@
 const fs = require('fs').promises;
 const path = require('path');
 
+
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
+
 const sass = require('node-sass');
 const pug = require('pug');
-const YAML = require('yaml')
+const YAML = require('yaml');
 const sharp = require('sharp');
 const md = require('markdown-it')({
 	html: true,
@@ -87,6 +91,23 @@ async function compileCss(config){
 	}
 }
 
+function extractMetadataFromArticle(article){
+	const dom = new JSDOM(article);
+	const paragraphs = dom.window.document.getElementsByTagName("p")
+	let i = 0;
+	while (i<paragraphs.length && paragraphs[i].contains(dom.window.document.querySelector("img"))){
+		i++;
+	}
+	const preview = i<paragraphs.length ? paragraphs[i].textContent : "No preview";
+	const firstParagraph = dom.window.document.querySelector("p")
+	const image = dom.window.document.querySelector("img")
+	const firstImage = (image && firstParagraph.contains(image)) ? image.src : "/favicon.png";
+	return {
+		imageURL: firstImage,
+		preview: preview
+	}
+}
+
 async function compileHtml(config, templates){
 	const htmlPath = path.join(config.root, config.markdown);
 	const files = await walk(htmlPath);
@@ -98,12 +119,23 @@ async function compileHtml(config, templates){
 		fs.mkdir(targetdir, { recursive: true })
 			.then(async ()=>{
 				const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
-				const metadata = yaml ? YAML.parse(yaml) : {};
 				const article = md.render(markdown);
-				const html = templates[metadata.layout ? metadata.layout : "layout"]({
-					title: metadata.title,
-					content: article
-				})
+				
+				// Generated metadata
+				let metadata = extractMetadataFromArticle(article);
+				metadata.title = parsed.name
+					.split(/[ -]/)
+					.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
+					.join(" ");
+				metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
+				
+				if (yaml){
+					metadata = Object.assign(metadata, YAML.parse(yaml));
+				}
+				
+				metadata.content = article;
+				
+				const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
 				fs.writeFile(target, html);
 			});
 	}
