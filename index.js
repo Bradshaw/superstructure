@@ -155,24 +155,6 @@ async function getTemplates(config){
 	return templates;
 }
 
-
-var arraything = [
-	{
-		name: "thing",
-		data: "The data"
-	},
-	{
-		name: "otherthing",
-		data: "More data"
-	},
-]
-
-var things = {
-	thing: "The data",
-	otherthing: "More data"
-}
-
-
 let superstructure = {
 	build: async (config)=>{
 		try{
