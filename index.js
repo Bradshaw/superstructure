@@ -108,37 +108,68 @@ function extractMetadataFromArticle(article){
 	}
 }
 
-async function compileHtml(config, templates){
+async function compileHtml(config, templates, articles){
 	const htmlPath = path.join(config.root, config.markdown);
 	const files = await walk(htmlPath);
-
+	let promises = [];
 	for (const file of files){
 		const parsed = path.parse(file);
 		const target = path.join(config.dest, file.replace(htmlPath, "").replace(parsed.ext, '.html'));
 		const targetdir = path.parse(target).dir;
-		fs.mkdir(targetdir, { recursive: true })
-			.then(async ()=>{
-				const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
-				const article = md.render(markdown);
-				
-				// Generated metadata
-				let metadata = extractMetadataFromArticle(article);
-				metadata.title = parsed.name
-					.split(/[ -]/)
-					.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
-					.join(" ");
-				metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
-				
-				if (yaml){
-					metadata = Object.assign(metadata, YAML.parse(yaml));
-				}
-				
-				metadata.content = article;
-				
-				const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
-				fs.writeFile(target, html);
+		const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
+		const article = md.render(markdown);
+		
+		// Generated metadata
+		let metadata = extractMetadataFromArticle(article);
+		metadata.title = parsed.name
+			.split(/[ -]/)
+			.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
+			.join(" ");
+		metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
+		
+		if (yaml){
+			metadata = Object.assign(metadata, YAML.parse(yaml));
+		}
+		
+		metadata.content = article;
+		articles.push(metadata);
+		const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
+		let promise = fs.mkdir(targetdir, { recursive: true });
+		promises.push(promise);
+		promise
+			.then(()=>{
+				promises.push(fs.writeFile(target, html))
 			});
 	}
+	return promises;
+}
+
+async function generateTagsPage(config, templates, tags){
+	const target = path.join(config.dest, "tags.html");
+	let markdown = "# All tags"
+	for (const tag of Object.keys(tags).sort((a,b)=> tags[b].length - tags[a].length)){
+		const count = tags[tag].length;
+		markdown += `\n- [**${tag}** (${count} ${count!=1 ? "posts" : "post"})](/posts/${tag})`
+	}
+	const html = templates.layout({
+		title: "Tags",
+		content: md.render(markdown)
+	})
+	await fs.writeFile(target, html)
+}
+
+async function generatePostsAndTags(config, templates, articles){
+	let tags = {};
+	for (const article of articles){
+		if (!article.tags) continue;
+		for (const tag of article.tags){
+			if (!tags.hasOwnProperty(tag)){
+				tags[tag]=[];
+			} 
+			tags[tag].push(article);
+		} 
+	}
+	await generateTagsPage(config, templates, tags);
 }
 
 async function getTemplates(config){
@@ -162,7 +193,11 @@ let superstructure = {
 			copyPublic(config);
 			crunchImages(config);
 			compileCss(config);
-			compileHtml(config, templates);
+			let articles = [];
+			compileHtml(config, templates, articles)
+				.then(()=>{
+					generatePostsAndTags(config, templates, articles);
+				})
 		} catch (err) {
 			console.error(err);
 		}
