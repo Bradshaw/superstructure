@@ -8,5 +8,8 @@
   },
   "keywords": [],
   "author": "Gaeel Bradshaw",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "node-sass": "^6.0.0"
+  }
 }
