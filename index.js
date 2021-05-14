@@ -124,7 +124,7 @@ function extractMetadataFromArticle(article){
 }
 
 async function compileHtml(config, templates, articles){
-	const htmlPath = path.join(config.root, config.markdown);
+	const htmlPath = path.join(config.root, config.articles);
 	const files = await walk(htmlPath);
 	let promises = [];
 	for (const file of files){
@@ -134,15 +134,21 @@ async function compileHtml(config, templates, articles){
 		const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
 		const article = md.render(markdown);
 		
-		// Generated metadata
-		let metadata = extractMetadataFromArticle(article);
+		
+		let metadata = {}
+		
+		// Load config into metadata
+		metadata = Object.assign(metadata, config);
+		// Load extracted article data into metadata
+		metadata = Object.assign(metadata, extractMetadataFromArticle(article));
+		// Load defaults into metadata
 		metadata.status = "published";
 		metadata.title = parsed.name
 			.split(/[ -]/)
 			.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
 			.join(" ");
 		metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
-		
+		// Load parsed yaml into metadata
 		if (yaml){
 			metadata = Object.assign(metadata, YAML.parse(yaml));
 		}
@@ -173,10 +179,10 @@ async function generateTagsPage(config, templates, tags){
 		const count = tags[tag].length;
 		markdown += `\n- [**${tag}** (${count} ${count!=1 ? "posts" : "post"})](/posts/${tag})`
 	}
-	const html = templates.layout({
-		title: "Tags",
-		content: md.render(markdown)
-	})
+	let metadata = Object.assign({}, config);
+	metadata.title = "Tags";
+	metadata.content = md.render(markdown);
+	const html = templates.layout(metadata)
 	return fs.writeFile(target, html)
 }
 
@@ -194,10 +200,10 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 		markdown += `\n${article.preview}`;
 		markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
 	}
-	const html = templates.layout({
-		title: "Posts",
-		content: md.render(markdown)
-	});
+	let metadata = Object.assign({}, config);
+	metadata.title = `Articles tagged with ${tag}`;
+	metadata.content = md.render(markdown);
+	const html = templates.layout(metadata)
 	return fs.writeFile(target, html);
 }
 
@@ -213,10 +219,10 @@ async function generatePostsPage(config, templates, articles){
 		markdown += `\n${article.preview}`;
 		markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
 	}
-	const html = templates.layout({
-		title: "Posts",
-		content: md.render(markdown)
-	});
+	let metadata = Object.assign({}, config);
+	metadata.title = "Posts";
+	metadata.content = md.render(markdown);
+	const html = templates.layout(metadata)
 	return fs.writeFile(target, html);
 }
 
