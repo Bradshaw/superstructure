@@ -44,56 +44,66 @@ async function walk(dir){
 async function copyPublic(config){
 	const publicPath = path.join(config.root, config.public);
 	const files = await walk(publicPath);
-	
+	let promises = [];
 	for (const file of files){
 		const target = path.join(config.dest, file.replace(publicPath, ""));
 		const targetdir = path.parse(target).dir;
-		fs.mkdir(targetdir, { recursive: true })
+		promises.push(fs.mkdir(targetdir, { recursive: true })
 			.then(()=>{
 				fs.copyFile(file, target)
-			});
+			}));
 	}
+	return promises;
 }
 
 async function crunchImages(config){
 	const publicPath = path.join(config.root, config.public);
 	const files = await walk(publicPath);
+	let promises = [];
 	for (const file of files){
 		const ext = path.extname(file);
 		if (config.crunch.includes(ext)){
 			const target = path.join(config.dest, file.replace(publicPath, "").replace(ext,".700w.jpg"));
 			const targetdir = path.parse(target).dir;
-			const crunched = await sharp(file)
+			let promise = sharp(file)
 				.resize(700)
 				.jpeg()
-				.toBuffer()
-			fs.writeFile(target,  crunched);
+				.toBuffer();
+			promises.push(fs.mkdir(targetdir, { recursive: true })
+				.then(()=>{
+					promise.then((crunched)=>{
+						fs.writeFile(target,  crunched);
+					});
+				}))
+			promises.push(promise);
 		}
 	}
+	return promises;
 }
 
 async function compileCss(config){
 	const cssPath = path.join(config.root, config.css);
 	const files = await walk(cssPath);
-
+	let promises = [];
 	for (const file of files){
 		const parsed = path.parse(file);
 		const target = path.join(config.dest, file.replace(cssPath, "").replace(parsed.ext, '.css'));
 		const targetdir = path.parse(target).dir;
-		fs.mkdir(targetdir, { recursive: true })
+		promises.push(fs.mkdir(targetdir, { recursive: true })
 			.then(()=>{
-				// console.log(`Compile ${file} to ${target}`);
 				sass.render({
 					file: file,
 					options: {
 						indentedSyntax: true
 					}
-			}, function(err, result) {
-					if (err) throw(err);
-					fs.writeFile(target,  result.css)
+				}, function(err, result) {
+					if (err) return console.error(err);
+					promises.push(fs.writeFile(target,  result.css));
 				});
-			});
+			}));
+		
 	}
+	return Promise.all(promises);
 }
 
 function extractMetadataFromArticle(article){
@@ -151,7 +161,7 @@ async function compileHtml(config, templates, articles){
 				promises.push(fs.writeFile(target, html))
 			});
 	}
-	return promises;
+	return Promise.all(promises);
 }
 
 async function generateTagsPage(config, templates, tags){
@@ -167,7 +177,7 @@ async function generateTagsPage(config, templates, tags){
 		title: "Tags",
 		content: md.render(markdown)
 	})
-	await fs.writeFile(target, html)
+	return fs.writeFile(target, html)
 }
 
 async function generateTaggedPostsPage(config, templates, articles, tag){
@@ -188,7 +198,7 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 		title: "Posts",
 		content: md.render(markdown)
 	});
-	await fs.writeFile(target, html);
+	return fs.writeFile(target, html);
 }
 
 async function generatePostsPage(config, templates, articles){
@@ -207,11 +217,12 @@ async function generatePostsPage(config, templates, articles){
 		title: "Posts",
 		content: md.render(markdown)
 	});
-	await fs.writeFile(target, html);
+	return fs.writeFile(target, html);
 }
 
 async function generatePostsAndTags(config, templates, articles){
 	let tags = {};
+	let promises = [];
 	for (const article of articles){
 		if (!article.tags) continue;
 		if (article.status == "unpublished") continue; 
@@ -224,10 +235,11 @@ async function generatePostsAndTags(config, templates, articles){
 	}
 	await fs.mkdir(path.join(config.dest, "posts"), { recursive: true })
 	for (const tag of Object.keys(tags)){
-		generateTaggedPostsPage(config, templates, articles, tag);
+		promises.push(generateTaggedPostsPage(config, templates, articles, tag));
 	} 
-	generatePostsPage(config, templates, articles);
-	generateTagsPage(config, templates, tags);
+	promises.push(generatePostsPage(config, templates, articles));
+	promises.push(generateTagsPage(config, templates, tags));
+	return Promise.all(promises);
 }
 
 async function getTemplates(config){
@@ -246,19 +258,21 @@ async function getTemplates(config){
 
 let superstructure = {
 	build: async (config)=>{
+		let promises = [];
 		try{
 			const templates = (await getTemplates(config));
-			copyPublic(config);
-			crunchImages(config);
-			compileCss(config);
 			let articles = [];
-			compileHtml(config, templates, articles)
+			promises.push(compileHtml(config, templates, articles)
 				.then(()=>{
 					generatePostsAndTags(config, templates, articles);
-				})
+				}));
+			promises.push(copyPublic(config));
+			promises.push(crunchImages(config));
+			promises.push(compileCss(config));
 		} catch (err) {
 			console.error(err);
 		}
+		return Promise.all(promises);
 	}
 }
 
