@@ -12,7 +12,9 @@ const sharp = require('sharp');
 const md = require('markdown-it')({
 	html: true,
 	breaks: true,
-});
+})
+	.use(require("markdown-it-collapsible"))
+	.use(require("markdown-it-anchor"));
 
 const cwd =  process.cwd();
 
