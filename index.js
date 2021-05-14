@@ -14,7 +14,12 @@ const md = require('markdown-it')({
 	breaks: true,
 })
 	.use(require("markdown-it-collapsible"))
-	.use(require("markdown-it-anchor"));
+	.use(require("markdown-it-anchor"))
+	.use(require("markdown-it-external-links"),{
+		externalClassName: null,
+		internalClassName: null,
+		externalTarget: "_blank",
+	})
 
 const cwd =  process.cwd();
 
