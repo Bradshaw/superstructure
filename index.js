@@ -4,7 +4,6 @@ const path = require('path');
 const dateFormat = require("dateformat");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
-const simpleGit = require('simple-git');
 
 const sass = require('node-sass');
 const pug = require('pug');
@@ -16,7 +15,6 @@ const md = require('markdown-it')({
 });
 
 const cwd =  process.cwd();
-
 
 async function walk(dir){
 	let files = [];
@@ -161,6 +159,27 @@ async function generateTagsPage(config, templates, tags){
 	await fs.writeFile(target, html)
 }
 
+async function generateTaggedPostsPage(config, templates, articles, tag){
+	const target = path.join(config.dest, `posts/${tag}.html`);
+	let markdown = `# Posts tagged with ${tag}`;
+	markdown += "\n[View all available tags](/tags)";
+	const datedArticles = articles
+		.filter(a => a.hasOwnProperty('tags') && a.tags.includes(tag))
+		.filter(a => a.hasOwnProperty("created"))
+		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
+	for (const article of datedArticles){
+		if (article.status == "unpublished") continue;
+		markdown += `\n# [${article.title}](${article.url})`;
+		markdown += `\n${article.preview}`;
+		markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
+	}
+	const html = templates.layout({
+		title: "Posts",
+		content: md.render(markdown)
+	});
+	await fs.writeFile(target, html);
+}
+
 async function generatePostsPage(config, templates, articles){
 	const target = path.join(config.dest, "posts.html");
 	let markdown = "[Filter by tag](/tags)";
@@ -192,6 +211,10 @@ async function generatePostsAndTags(config, templates, articles){
 			tags[tag].push(article);
 		} 
 	}
+	await fs.mkdir(path.join(config.dest, "posts"), { recursive: true })
+	for (const tag of Object.keys(tags)){
+		generateTaggedPostsPage(config, templates, articles, tag);
+	} 
 	generatePostsPage(config, templates, articles);
 	generateTagsPage(config, templates, tags);
 }
@@ -214,8 +237,8 @@ let superstructure = {
 	build: async (config)=>{
 		try{
 			const templates = (await getTemplates(config));
-			//copyPublic(config);
-			//crunchImages(config);
+			copyPublic(config);
+			crunchImages(config);
 			compileCss(config);
 			let articles = [];
 			compileHtml(config, templates, articles)
