@@ -5,9 +5,10 @@ Building a website with Superstructure is (mostly) easy! Here's a little explana
 ## Install Superstructure
 
 - Have [node.js](https://nodejs.org/en/) installed
-- Run `npm install superstructure`
-- Copy the [example project](https://github.com/Bradshaw/superstructure/tree/main/example)
-- Build by running `node index.js`
+- Grab the [example project](https://github.com/Bradshaw/superstructure/tree/main/example)
+- Install Superstructure by running `npm install`
+- Build by running `npm start`
+
 
 ### Usage
 
