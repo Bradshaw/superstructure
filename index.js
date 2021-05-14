@@ -1,9 +1,10 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-
+const dateFormat = require("dateformat");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
+const simpleGit = require('simple-git');
 
 const sass = require('node-sass');
 const pug = require('pug');
@@ -15,7 +16,6 @@ const md = require('markdown-it')({
 });
 
 const cwd =  process.cwd();
-
 
 
 async function walk(dir){
@@ -161,6 +161,25 @@ async function generateTagsPage(config, templates, tags){
 	await fs.writeFile(target, html)
 }
 
+async function generatePostsPage(config, templates, articles){
+	const target = path.join(config.dest, "posts.html");
+	let markdown = "[Filter by tag](/tags)";
+	const datedArticles = articles
+		.filter(a => a.hasOwnProperty("created"))
+		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
+	for (const article of datedArticles){
+		if (article.status == "unpublished") continue;
+		markdown += `\n# [${article.title}](${article.url})`;
+		markdown += `\n${article.preview}`;
+		markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
+	}
+	const html = templates.layout({
+		title: "Posts",
+		content: md.render(markdown)
+	});
+	await fs.writeFile(target, html);
+}
+
 async function generatePostsAndTags(config, templates, articles){
 	let tags = {};
 	for (const article of articles){
@@ -173,7 +192,8 @@ async function generatePostsAndTags(config, templates, articles){
 			tags[tag].push(article);
 		} 
 	}
-	await generateTagsPage(config, templates, tags);
+	generatePostsPage(config, templates, articles);
+	generateTagsPage(config, templates, tags);
 }
 
 async function getTemplates(config){
