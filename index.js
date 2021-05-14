@@ -121,6 +121,7 @@ async function compileHtml(config, templates, articles){
 		
 		// Generated metadata
 		let metadata = extractMetadataFromArticle(article);
+		metadata.status = "published";
 		metadata.title = parsed.name
 			.split(/[ -]/)
 			.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
@@ -147,7 +148,9 @@ async function compileHtml(config, templates, articles){
 async function generateTagsPage(config, templates, tags){
 	const target = path.join(config.dest, "tags.html");
 	let markdown = "# All tags"
-	for (const tag of Object.keys(tags).sort((a,b)=> tags[b].length - tags[a].length)){
+	const tagnames = Object.keys(tags)
+		.sort((a,b)=> tags[b].length - tags[a].length);
+	for (const tag of tagnames){
 		const count = tags[tag].length;
 		markdown += `\n- [**${tag}** (${count} ${count!=1 ? "posts" : "post"})](/posts/${tag})`
 	}
@@ -162,6 +165,7 @@ async function generatePostsAndTags(config, templates, articles){
 	let tags = {};
 	for (const article of articles){
 		if (!article.tags) continue;
+		if (article.status == "unpublished") continue; 
 		for (const tag of article.tags){
 			if (!tags.hasOwnProperty(tag)){
 				tags[tag]=[];
@@ -190,8 +194,8 @@ let superstructure = {
 	build: async (config)=>{
 		try{
 			const templates = (await getTemplates(config));
-			copyPublic(config);
-			crunchImages(config);
+			//copyPublic(config);
+			//crunchImages(config);
 			compileCss(config);
 			let articles = [];
 			compileHtml(config, templates, articles)
