@@ -132,6 +132,10 @@ async function compileHtml(config, templates, articles){
 			metadata = Object.assign(metadata, YAML.parse(yaml));
 		}
 		
+		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")){
+			metadata.updated = metadata.created;
+		}
+		
 		metadata.content = article;
 		articles.push(metadata);
 		const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
