@@ -26,6 +26,6 @@ Metadata about the article can be defined in little [YAML](https://yaml.org/) ch
 ### Installing
 
 - Have [node.js](https://nodejs.org/en/) installed
-- Grab the [example project](example)
+- Grab the [example project](https://github.com/Bradshaw/superstructure/tree/main/example)
 - Install Superstructure by running `npm install`
 - Build by running `npm start`

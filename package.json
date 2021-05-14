@@ -2,6 +2,10 @@
   "name": "superstructure",
   "version": "1.0.0",
   "description": "A website builder",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bradshaw/superstructure.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
