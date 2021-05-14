@@ -1,0 +1,15 @@
+{
+  "name": "superstructure-example",
+  "version": "1.0.0",
+  "description": "An example website built with superstructure",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gaeel Bradshaw",
+  "license": "ISC",
+  "dependencies": {
+    "superstructure": "../"
+  }
+}

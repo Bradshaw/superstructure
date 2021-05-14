@@ -1,0 +1,83 @@
+-
+  var cache = [
+    '',
+    ' ',
+    '  ',
+    '   ',
+    '    ',
+    '     ',
+    '      ',
+    '       ',
+    '        ',
+    '         '
+  ];
+
+  function leftPad (str, len, ch) {
+    // convert `str` to a `string`
+    str = str + '';
+    // `len` is the `pad`'s length now
+    len = len - str.length;
+    // doesn't need to pad
+    if (len <= 0) return str;
+    // `ch` defaults to `' '`
+    if (!ch && ch !== 0) ch = ' ';
+    // convert `ch` to a `string` cuz it could be a number
+    ch = ch + '';
+    // cache common use cases
+    if (ch === ' ' && len < 10) return cache[len] + str;
+    // `pad` starts with an empty string
+    var pad = '';
+    // loop
+    while (true) {
+      // add `ch` to `pad` if `len` is odd
+      if (len & 1) pad += ch;
+      // divide `len` by 2, ditch the remainder
+      len >>= 1;
+      // "double" the `ch` so this operation count grows logarithmically on `len`
+      // each time `ch` is "doubled", the `len` would need to be "doubled" too
+      // similar to finding a value in binary search tree, hence O(log(n))
+      if (len) ch += ch;
+      // `len` is 0, exit the loop
+      else break;
+    }
+    // pad `str`!
+    return pad + str;
+  }
+  
+  function formatDate(date) {
+    var monthNames = [
+      "January", "February", "March",
+      "April", "May", "June", "July",
+      "August", "September", "October",
+      "November", "December"
+    ];
+
+    var day = date.getDate();
+    switch (day) {
+      case 1:
+      case 21:
+      case 31:
+        day+="st";
+        break;
+      case 2:
+      case 22:
+        day+="nd";
+        break;
+      case 3:
+      case 23:
+        day+="rd";
+        break;
+      default:
+        day+="th";
+    }
+    var monthIndex = date.getMonth();
+    var year = date.getFullYear();
+
+    return monthNames[monthIndex] + ' ' + day + ', ' + year;
+  }
+  function formatTime(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var seconds = date.getSeconds();
+    return leftPad(hours, 2, 0) + ':' + leftPad(minutes, 2, 0) + ":" + leftPad(seconds, 2, 0);
+  }

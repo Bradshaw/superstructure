@@ -1,0 +1,51 @@
+include /utils
+doctype html
+html
+	head
+		title #{title} - #{name}
+		meta(charset="utf-8")
+		meta(http-equiv="X-UA-Compatible" content="IE=edge")
+		meta(name="viewport" content="width=device-width, initial-scale=1")
+		link(rel='stylesheet', href='/style.css')
+		meta(name="description" content=description)
+		if (created)
+			// OpenGraph tags
+			meta(property="og:site_name" content=name)
+			meta(property="og:title" content=title)
+			meta(property="og:url" content=siteUrl + url)
+			meta(property="og:description" content=preview)
+			meta(property="og:image" content=siteUrl + imageURL)
+			meta(property="og:type" content="article")
+			meta(property="article:published_time" content=created)
+			unless new Date(updated).getTime() === new Date(created).getTime()
+				meta(property="article:modified_time" content=updated)
+			if tags
+				each tag in tags
+					meta(property="article:tag" content=tag)
+	body
+		.container
+			header
+				.title=name
+				nav
+					span
+						a.hlink(href="/") home
+						|  - 
+						a.hlink(href="/posts") posts
+			main
+				article#article !{content}
+					if created
+						br
+						br
+						.date Posted #{formatDate(new Date(updated))}
+			footer
+				div.footercontent
+					if tags
+						p Related tags
+							ul
+								li
+									span
+										a(href="/posts") all
+								each tag in tags
+									li
+										span
+											a(href="/posts/" + tag.replace(" ", "-"))= tag
