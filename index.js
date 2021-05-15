@@ -100,6 +100,33 @@ async function crunchImages(config){
 	return promises;
 }
 
+function sassRenderPromise(options){
+	return new Promise(((resolve, reject) => {
+		sass.render(options, (err, data)=>{
+			if (err) {
+				reject(err);
+			} else {
+				resolve(data);
+			}
+		});
+	}));
+}
+
+function renderSassError(error, filename){
+	let out = `Error on line ${error.line}, column ${error.column} in ${filename || error.filename}`;
+	const src = error.src.split('\n');
+	for (let line = Math.max(0,error.line-3); line<Math.min(src.length, error.line+3); line++){
+		if (line<error.line-1 || line>error.line-1) out += `\n${(""+line).padStart(5," ")}|${src[line].replace(/\t/g, "    ")}`;
+		else if (line===error.line-1) {
+			out += `\n${("> " + line + "").padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
+			let dashes = "-".repeat(src[line].substr(0,error.column-1).replace(/\t/g, "    ").length);
+			out += `\n${"-".repeat(6)}${dashes}^`;
+		}
+	}
+	out += `\nError: ${(""+error).split('\n')[0]}`;
+	return out;
+}
+
 async function compileCss(config){
 	const cssPath = path.join(config.root, config.css);
 	const files = await walk(cssPath);
@@ -108,18 +135,28 @@ async function compileCss(config){
 		const parsed = path.parse(file);
 		const target = path.join(config.dest, file.replace(cssPath, "").replace(parsed.ext, '.css'));
 		const targetdir = path.parse(target).dir;
-		promises.push(fs.mkdir(targetdir, { recursive: true })
-			.then(()=>{
-				sass.render({
-					file: file,
-					options: {
-						indentedSyntax: true
-					}
-				}, function(err, result) {
-					if (err) return console.error(err);
-					promises.push(fs.writeFile(target,  result.css));
-				});
-			}));
+		promises.push(fs.mkdir(targetdir, {recursive: true})
+			.then(() => {
+				promises.push(sassRenderPromise({
+						file: file,
+						options: {
+							indentedSyntax: true
+						}
+					})
+						.then(result => promises.push(fs.writeFile(target, result.css)))
+						.catch(e => {
+							fs.readFile(file, {encoding: "utf8"})
+								.then(src => {
+									e.src = src;
+									console.error(renderSassError(e))
+								})
+						})
+				);
+			})
+			.catch(e => {
+				console.error(e)
+			})
+		);
 		
 	}
 	return Promise.all(promises);
