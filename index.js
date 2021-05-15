@@ -148,7 +148,7 @@ async function compileCss(config){
 							fs.readFile(file, {encoding: "utf8"})
 								.then(src => {
 									e.src = src;
-									console.error(renderSassError(e))
+									console.error(renderSassError(e, file))
 								})
 						})
 				);
