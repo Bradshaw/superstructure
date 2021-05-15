@@ -12,9 +12,10 @@ html
 			// OpenGraph tags
 			meta(property="og:site_name" content=name)
 			meta(property="og:title" content=title)
-			meta(property="og:url" content=siteUrl + url)
+			if (siteUrl && siteUrl.length>0)
+				meta(property="og:url" content=siteUrl + url)
+				meta(property="og:image" content=siteUrl + imageURL)
 			meta(property="og:description" content=preview)
-			meta(property="og:image" content=siteUrl + imageURL)
 			meta(property="og:type" content="article")
 			meta(property="article:published_time" content=created)
 			unless new Date(updated).getTime() === new Date(created).getTime()
@@ -26,6 +27,7 @@ html
 		.container
 			header
 				.title=name
+				p.blurb=description
 				nav
 					span
 						a.hlink(href="/") home
