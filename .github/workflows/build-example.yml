@@ -1,0 +1,32 @@
+name: Build example project
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: example
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 12.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 12.x
+    - run: npm ci
+    - run: npm start
+    - run: npm test
+    - name: GitHub Pages
+      if: success()
+      uses: crazy-max/ghaction-github-pages@v2.4.1
+      with:
+        build_dir: example/build
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
