@@ -183,6 +183,17 @@ function extractMetadataFromArticle(article){
 	}
 }
 
+function renderYamlError(error, filename, yaml, offset){
+	
+	let out = `Error in the YAML chunk of ${filename} on line ${error.linePos.start.line+offset-1}, column ${error.linePos.start.col}`;
+	const start = yaml.substr(0,error.range.start);
+	const middle = yaml.substr(error.range.start,error.range.end-error.range.start);
+	const end = yaml.substr(error.range.end);
+	out += `\n${start}\x1b[31m\x1b[7m${middle}\x1b[0m${end}`;
+	out += `\n${(""+error).split('\n')[0]}`;
+	return out;
+}
+
 async function compileHtml(config, templates, articles){
 	const htmlPath = path.join(config.root, config.articles);
 	const files = await walk(htmlPath);
@@ -210,7 +221,11 @@ async function compileHtml(config, templates, articles){
 		metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
 		// Load parsed yaml into metadata
 		if (yaml){
-			metadata = Object.assign(metadata, YAML.parse(yaml));
+			try {
+				metadata = Object.assign(metadata, YAML.parse(yaml, {prettyErrors: true}));
+			} catch (e) {
+				console.error(renderYamlError(e, file, yaml, markdown.split("\n").length));
+			}
 		}
 		
 		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")){
