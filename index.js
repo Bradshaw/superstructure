@@ -90,9 +90,13 @@ async function crunchImages(config){
 				.toBuffer();
 			promises.push(fs.mkdir(targetdir, { recursive: true })
 				.then(()=>{
-					promise.then((crunched)=>{
-						fs.writeFile(target,  crunched);
-					});
+					promise
+						.then((crunched)=>{
+							fs.writeFile(target,  crunched);
+						})
+						.catch(e => {
+							console.error(`Error while crunching ${file}\n${e}`);
+						});
 				}))
 			promises.push(promise);
 		}
