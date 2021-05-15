@@ -1,6 +1,10 @@
 name: Build example project
 
 on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Manually build and deploy'  
   push:
     branches: [ main ]
 
