@@ -267,16 +267,43 @@ async function generatePostsAndTags(config, templates, articles){
 	return Promise.all(promises);
 }
 
+function renderPugError(error, filename){
+	let out = `Error on line ${error.line}, column ${error.column} in ${filename || error.filename}`;
+	const src = error.src.split('\n');
+	for (let line = Math.max(0,error.line-3); line<Math.min(src.length, error.line+3); line++){
+		if (line<error.line-1 || line>error.line-1) out += `\n${(""+line).padStart(5," ")}|${src[line].replace(/\t/g, "    ")}`;
+		else if (line===error.line-1) {
+			out += `\n${("> " + line + "").padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
+			let dashes = "-".repeat(src[line].substr(0,error.column-1).replace(/\t/g, "    ").length);
+			out += `\n${"-".repeat(6)}${dashes}^`;
+		}
+	}
+	out += `\nError: ${error.msg}`;
+	return out;
+}
+
 async function getTemplates(config){
 	const templatePath = path.join(config.root, config.templates);
 	const files = await walk(templatePath);
 	let templates = {};
+	let templateData
 	for (const file of files){
 		const templateFilename = path.parse(file).name
-		templates[templateFilename] = pug.compile(await fs.readFile(file), {
-			basedir: templatePath,
-			filename: templateFilename
-		});
+		try {
+			templateData = await fs.readFile(file);
+		} catch (err) {
+			throw (`Could not read ${file}\n${err}`);
+		} finally {
+			try {
+				templates[templateFilename] = pug.compile(templateData, {
+					basedir: templatePath,
+					filename: templateFilename
+				});
+			} catch (err) {
+				throw renderPugError(err, file);
+			}
+		}
+		
 	}
 	return templates;
 }
