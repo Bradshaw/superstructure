@@ -22,7 +22,6 @@ jobs:
         node-version: 12.x
     - run: npm ci
     - run: npm start
-    - run: npm test
     - name: GitHub Pages
       if: success()
       uses: crazy-max/ghaction-github-pages@v2.4.1
