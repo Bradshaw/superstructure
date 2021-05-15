@@ -1,0 +1,46 @@
+<!DOCTYPE html><html><head><title>Build a website - Example Website</title><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/style.css"><meta name="description" content="A website that demonstrates Superstructure"><!-- OpenGraph tags--><meta property="og:site_name" content="Example Website"><meta property="og:title" content="Build a website"><meta property="og:url" content="https://github.com/Bradshaw/superstructure/example/how-to/build-a-website"><meta property="og:image" content="https://github.com/Bradshaw/superstructure/example/favicon.png"><meta property="og:description" content="Building a website with Superstructure is (mostly) easy! Here's a little explanation to get you going!"><meta property="og:type" content="article"><meta property="article:published_time" content="2021-05-14T18:18:24.853Z"><meta property="article:tag" content="superstructure"></head><body><div class="container"><header><div class="title">Example Website</div><p class="blurb">A website that demonstrates Superstructure</p><nav><span><a class="hlink" href="/">home</a> - <a class="hlink" href="/posts">posts</a></span></nav></header><main><article id="article"><h1 id="build-a-website-with-superstructure">Build a Website with Superstructure</h1>
+<p>Building a website with Superstructure is (mostly) easy! Here's a little explanation to get you going!</p>
+<h2 id="install-superstructure">Install Superstructure</h2>
+<ul>
+<li>Have <a href="https://nodejs.org/en/" target="_blank">node.js</a> installed</li>
+<li>Grab the <a href="https://github.com/Bradshaw/superstructure/tree/main/example" target="_blank">example project</a></li>
+<li>Install Superstructure by running <code>npm install</code></li>
+<li>Build by running <code>npm start</code></li>
+</ul>
+<h3 id="usage">Usage</h3>
+<p>To configure your website, you can do something like this in your <code>index.js</code> file:</p>
+<pre><code class="language-js">// Require superstructure
+const superstructure = require(&quot;superstructure&quot;);
+
+// Set your configuration
+const config = {
+	// Name of your website
+	name: 'Example Website',
+	// What your website is about
+	description: &quot;A website that demonstrates Superstructure&quot;,
+	// Canonical URL for your website
+	siteUrl: 'https://github.com/Bradshaw/superstructure/example',
+	// Where to put the generated website
+	dest: './build',
+	// Where all your content is
+	root: './sources',
+	// Files to copy verbatim
+	public: 'public',
+	// Page templates (must include a layout.pug template at least)
+	templates: 'templates',
+	// Stylesheets (written in sass)
+	css: 'css',
+	// Your articles (written in Markdown)
+	articles: 'articles',
+	// Images types to make compressed versions of 
+	crunch: [&quot;.jpg&quot;,&quot;.png&quot;],
+};
+
+
+superstructure.build(config)
+	.then(()=&gt;{
+		// Code you want to run when the build is done
+		console.log(&quot;After build&quot;);
+	});
+</code></pre>
+<br><br><div class="date">Posted May 14th, 2021</div></article></main><footer><div class="footercontent"><p>Related tags<ul><li><span><a href="/posts">all</a></span></li><li><span><a href="/posts/superstructure">superstructure</a></span></li></ul></p></div></footer></div></body></html>
