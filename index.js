@@ -23,6 +23,29 @@ const md = require('markdown-it')({
 
 const cwd =  process.cwd();
 
+const defaultConfig = {
+	// Name of your website
+	name: 'My Website',
+	// What your website is about
+	description: "A website about things I like",
+	// Canonical URL for your website
+	siteUrl: '',
+	// Where to put the generated website
+	dest: './build',
+	// Where all your content is
+	root: './sources',
+	// Files to copy verbatim
+	public: 'public',
+	// Page markdown (must include a layout.pug template at least)
+	templates: 'templates',
+	// Stylesheets (written in sass)
+	css: 'css',
+	// Your articles (written in Markdown)
+	articles: 'articles',
+	// Images types to make compressed versions of 
+	crunch: [".jpg",".png"],
+}
+
 async function walk(dir){
 	let files = [];
 	try {
@@ -266,6 +289,7 @@ let superstructure = {
 	build: async (config)=>{
 		let promises = [];
 		try{
+			config = Object.assign(defaultConfig, config || {});
 			const templates = (await getTemplates(config));
 			let articles = [];
 			promises.push(compileHtml(config, templates, articles)
