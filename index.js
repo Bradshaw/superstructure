@@ -48,18 +48,14 @@ const defaultConfig = {
 
 async function walk(dir){
 	let files = [];
-	try {
-		const elems = await fs.readdir(dir);
-		for (const elem of elems) {
-			const stat = await fs.stat(path.join(dir,  elem));
-			if (stat.isDirectory()) {
-				files = files.concat(await walk(path.join(dir,  elem)));
-			} else {
-				files.push(path.join(dir,  elem));
-			}
+	const elems = await fs.readdir(dir);
+	for (const elem of elems) {
+		const stat = await fs.stat(path.join(dir,  elem));
+		if (stat.isDirectory()) {
+			files = files.concat(await walk(path.join(dir,  elem)));
+		} else {
+			files.push(path.join(dir,  elem));
 		}
-	} catch (err) {
-		console.error(err);
 	}
 	return files;
 }
@@ -285,23 +281,45 @@ async function getTemplates(config){
 	return templates;
 }
 
+
+async function verifyAndPrepare(config){
+	// Try to create destination directory
+	try {
+		await fs.mkdir(config.dest, { recursive: true });
+	} catch (err) {
+		throw (`Could not create destination directory: ${config.dest}\n${err}`);
+	}
+	// Source directories exist and can be read from
+	const sources = [
+		config.root,
+		path.join(config.root, config.public),
+		path.join(config.root, config.templates),
+		path.join(config.root, config.css),
+		path.join(config.root, config.articles),
+	]
+	for (const source of sources){
+		try {
+			await walk(source);
+		} catch (err) {
+			throw (`Could not read from source directory: ${source}\n${err}`);
+		}
+	} 
+}
+
 let superstructure = {
 	build: async (config)=>{
 		let promises = [];
-		try{
-			config = Object.assign(defaultConfig, config || {});
-			const templates = (await getTemplates(config));
-			let articles = [];
-			promises.push(compileHtml(config, templates, articles)
-				.then(()=>{
-					generatePostsAndTags(config, templates, articles);
-				}));
-			promises.push(copyPublic(config));
-			promises.push(crunchImages(config));
-			promises.push(compileCss(config));
-		} catch (err) {
-			console.error(err);
-		}
+		config = Object.assign(defaultConfig, config || {});
+		await verifyAndPrepare(config);
+		const templates = (await getTemplates(config));
+		let articles = [];
+		promises.push(compileHtml(config, templates, articles)
+			.then(()=>{
+				generatePostsAndTags(config, templates, articles);
+			}));
+		promises.push(copyPublic(config));
+		promises.push(crunchImages(config));
+		promises.push(compileCss(config));
 		return Promise.all(promises);
 	}
 }
