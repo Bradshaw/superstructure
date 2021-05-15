@@ -1,10 +1,7 @@
 name: Build example project
 
 on:
-  workflow_dispatch:
-    inputs:
-      tags:
-        description: 'Manually build and deploy'  
+  workflow_dispatch: {}
   push:
     branches: [ main ]
 
@@ -30,9 +27,6 @@ jobs:
       with:
         key: ${{ secrets.SSH_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
-        if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
-    - run: cat /etc/ssh/ssh_known_hosts
-    - run: cat /home/runner/.ssh/known_hosts
-    - run: y | ssh -vvv ${{ secrets.SSH_USER }}
+        if_key_exists: replace # replace / ignore / fail; optional (defaults to fail)
     - name: rsync over ssh
       run: rsync -r ./build/ ${{ secrets.SSH_USER }}:${{ secrets.SITE_DIRECTORY }}
