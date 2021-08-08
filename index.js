@@ -263,7 +263,7 @@ async function generateTagsPage(config, templates, tags){
 
 async function generateTaggedPostsPage(config, templates, articles, tag){
 	const target = path.join(config.dest, `posts/${tag}.html`);
-	let markdown = `# Posts tagged with ${tag}`;
+	let markdown = `# Posts tagged with ${tag.replace('-','‑')}`;
 	markdown += "\n[View all available tags](/tags)";
 	const datedArticles = articles
 		.filter(a => a.hasOwnProperty('tags') && a.tags.includes(tag))
