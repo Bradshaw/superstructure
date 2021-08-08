@@ -1,0 +1,51 @@
+$base-hue: 30
+$body-color: lightgray
+$container-color: hsl($base-hue+180, 30, 90%)
+$text-color: hsl($base-hue+180, 30, 15%)
+$link-color: hsl($base-hue, 100, 20%)
+$header-link-color: hsl($base-hue+180, 100, 80%)
+
+html
+  padding-left: calc(100vw - 100%)
+
+
+body
+  background: $body-color
+  color: $text-color
+  font-size: 1.5em
+  font-family: Helvetica, serif
+  line-height: 1.3
+  margin: 0
+  
+.container
+  max-width: 800px
+  margin: auto
+  background: $container-color
+  min-height: 100vh
+  
+header
+  background: $text-color
+  color: $body-color
+  a
+    color: $header-link-color
+  .title
+    font-size: 3em
+  .blurb
+    font-style: italic
+  
+header, article, footer
+  padding: 20px
+  
+pre
+  padding: 20px
+  font-size: 0.75em
+  background: lighten($container-color, 50%)
+  
+img
+  max-width: 100%
+  
+footer
+  font-size: 0.75em
+  
+a
+  color: $link-color
