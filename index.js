@@ -277,7 +277,9 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 		if (article.status == "unpublished") continue;
 		markdown += `\n# [${article.title}](${article.url})`;
 		markdown += `\n${article.preview}`;
-		markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
+		if (typeof(article.create)=='object'){
+			markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
+		}
 	}
 	let metadata = Object.assign({}, config);
 	metadata.title = `Articles tagged with ${tag}`;
