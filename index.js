@@ -267,7 +267,11 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 	markdown += "\n[View all available tags](/tags)";
 	const datedArticles = articles
 		.filter(a => a.hasOwnProperty('tags') && a.tags.includes(tag))
-		.filter(a => a.hasOwnProperty("created"))
+		.map(a => {
+			if (!a.hasOwnProperty('created'))
+				a.created = -(a['sort-order'] || 0);
+			return a;
+		})
 		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
 	for (const article of datedArticles){
 		if (article.status == "unpublished") continue;
