@@ -1,3 +1,23 @@
+## 1.1.0 (2021-08-08)
+
+### Feat
+
+- don't display date on un-dated articles in tagged posts pages
+- include un-dated articles on tagged posts pages
+- replace hyphens in tag names with non-breaking hyphens on the tags page
+- handle yaml parsing errors
+- handle image crunching errors
+- handle sass compilation errors
+- handle pug compilation errors
+- verify config
+- adds default configuration
+
+### Fix
+
+- fixes page shifting when scrollbar is present
+- fixes sass filename not appearing in error messages
+- upgrade example project to 1.0.1
+
 ## 1.0.1 (2021-05-14)
 
 ### Feat
