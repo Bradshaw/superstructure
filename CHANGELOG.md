@@ -1,3 +1,13 @@
+## 2.0.0 (2023-03-07)
+
+### BREAKING CHANGE
+
+- pages that rely on anchor tags with non-alphanumerical characters will break
+
+### Feat
+
+- **anchor-tags**: remove non-alphanumerical characters from anchor tags
+
 ## 1.1.0 (2021-08-08)
 
 ### Feat
