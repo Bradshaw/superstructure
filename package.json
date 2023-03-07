@@ -24,9 +24,9 @@
     "markdown-it-anchor": "^7.1.0",
     "markdown-it-collapsible": "^1.0.0",
     "markdown-it-external-links": "^0.0.6",
-    "node-sass": "^6.0.0",
+    "node-sass": "^8.0.0",
     "pug": "^3.0.2",
-    "sharp": "^0.28.2",
+    "sharp": "^0.31.3",
     "yaml": "^1.10.2"
   }
 }
