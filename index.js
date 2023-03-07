@@ -14,7 +14,15 @@ const md = require('markdown-it')({
 	breaks: true,
 })
 	.use(require("markdown-it-collapsible"))
-	.use(require("markdown-it-anchor"))
+	.use(require("markdown-it-anchor"), {
+		slugify: (s) => encodeURIComponent(
+			String(s)
+				.trim()
+				.toLowerCase()
+				.replace(/[^(\s+|\w)]/g, '')
+				.replace(/\s+/g, '-')
+		)
+	})
 	.use(require("markdown-it-external-links"),{
 		externalClassName: null,
 		internalClassName: null,
