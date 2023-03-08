@@ -9,7 +9,7 @@ const sass = require('node-sass');
 const pug = require('pug');
 const YAML = require('yaml');
 const sharp = require('sharp');
-const md = require('markdown-it')({
+let md = require('markdown-it')({
 	html: true,
 	breaks: true,
 })
@@ -27,7 +27,7 @@ const md = require('markdown-it')({
 		externalClassName: null,
 		internalClassName: null,
 		externalTarget: "_blank",
-	})
+	});
 
 const cwd =  process.cwd();
 
@@ -418,6 +418,10 @@ let superstructure = {
 		promises.push(crunchImages(config));
 		promises.push(compileCss(config));
 		return Promise.all(promises);
+	},
+	use_md: (plugin, opts) => {
+		md.use(plugin, opts);
+		return superstructure;
 	}
 }
 
