@@ -1,3 +1,9 @@
+## 2.1.0 (2023-03-08)
+
+### Feat
+
+- **markdown**: adds use_md method allowing for custom markdown-it plugins
+
 ## 2.0.0 (2023-03-07)
 
 ### BREAKING CHANGE
