@@ -36,6 +36,11 @@ const defaultConfig = {
 	name: 'My Website',
 	// What your website is about
 	description: "A website about things I like",
+	// Default author
+	author: {
+		name: '',
+		email: ''
+	},
 	// Canonical URL for your website
 	siteUrl: '',
 	// Where to put the generated website
@@ -185,8 +190,10 @@ function extractMetadataFromArticle(article){
 	const firstParagraph = dom.window.document.querySelector("p")
 	const image = dom.window.document.querySelector("img")
 	const firstImage = (image && firstParagraph.contains(image)) ? image.src : "/favicon.png";
+	console.log([...dom.window.document.querySelectorAll("img")].map(img => img.src));
 	return {
 		imageURL: firstImage,
+		images: dom.window.document.querySelectorAll("img"),
 		preview: preview
 	}
 }
@@ -294,6 +301,49 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 	metadata.content = md.render(markdown);
 	const html = templates.layout(metadata)
 	return fs.writeFile(target, html);
+}
+
+const imageRgx = /(<img src=")(\/.+?)(")/gm
+
+async function generateAtom(config, templates, articles){
+	const target = path.join(config.dest, "posts.atom");
+	let atom = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+		"<feed xmlns=\"http://www.w3.org/2005/Atom\">";
+
+	const datedArticles = articles
+		.filter(a => a.hasOwnProperty("created"))
+		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
+
+	atom += `
+  <title>${config.name}</title>
+  <link href="${config.siteUrl}/posts.atom" rel="self"/>
+  <link href="${config.siteUrl}/posts" rel="alternate"/>
+  <updated>${datedArticles[0].created.toString()}</updated>
+  <author>
+    <name>${config.author.name}</name>
+    <email>${config.author.email}</email>
+  </author>
+  <id>${config.siteUrl}</id>`
+
+	for (const article of datedArticles){
+		if (article.status == "unpublished") continue;
+		let categories = "";
+		for (const tag of article.tags) {
+			categories += `<category term="${tag}" />`
+		}
+		atom += `  <entry>
+    <title>${article.title}</title>
+    <link href="${config.siteUrl}${article.url}"/>
+    <id>${article.url}</id>
+    <published>${article.created.toString()}</published>
+    <updated>${article.updated.toString()}</updated>
+    <summary>${article.preview}</summary>
+    <content type="html"><![CDATA[${article.content.replace(imageRgx, `$1${config.siteUrl}$2$3`)}]]></content>
+    ${categories}
+  </entry>`
+	}
+	atom += "</feed>";
+	return fs.writeFile(target, atom);
 }
 
 async function generatePostsPage(config, templates, articles){
@@ -413,6 +463,7 @@ let superstructure = {
 		promises.push(compileHtml(config, templates, articles)
 			.then(()=>{
 				generatePostsAndTags(config, templates, articles);
+				generateAtom(config, templates, articles);
 			}));
 		promises.push(copyPublic(config));
 		promises.push(crunchImages(config));
