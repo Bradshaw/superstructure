@@ -7,8 +7,13 @@ const config = {
 	name: 'Example Website',
 	// What your website is about
 	description: "A website that demonstrates Superstructure",
+	// Default author
+	author: {
+		name: 'Gaeel Bradshaw',
+		email: 'gaeel@spaceshipsin.space'
+	},
 	// Canonical URL for your website
-	siteUrl: 'https://github.com/Bradshaw/superstructure/example',
+	siteUrl: 'https://superstructure.dev/',
 	// Where to put the generated website
 	dest: './build',
 	// Where all your content is
