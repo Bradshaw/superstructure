@@ -303,7 +303,9 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 	return fs.writeFile(target, html);
 }
 
-const imageRgx = /(<img src=")(\/.+?)(")/gm
+const imageRgx = /(<img src=")\/(.+?)(")/gm
+
+const urlRgx = /(<a href=")\/(.+?)(")/gm
 
 async function generateAtom(config, templates, articles){
 	const target = path.join(config.dest, "posts.atom");
@@ -338,7 +340,7 @@ async function generateAtom(config, templates, articles){
     <published>${article.created.toString()}</published>
     <updated>${article.updated.toString()}</updated>
     <summary>${article.preview}</summary>
-    <content type="html"><![CDATA[${article.content.replace(imageRgx, `$1${config.siteUrl}$2$3`)}]]></content>
+    <content type="html"><![CDATA[${article.content.replace(imageRgx, `$1${config.siteUrl}$2$3`).replace(urlRgx, `$1${config.siteUrl}$2$3`)}]]></content>
     ${categories}
   </entry>`
 	}
