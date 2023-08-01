@@ -1,3 +1,15 @@
+## 2.2.0 (2023-08-01)
+
+### Feat
+
+- **atom-feed**: adds atom feed generation
+- **example**: add updated metadata to example article
+- **example-website**: update image link in example articles
+
+### Fix
+
+- **atom-feed**: rewrite relative URLs to absolute
+
 ## 2.1.0 (2023-03-08)
 
 ### Feat
