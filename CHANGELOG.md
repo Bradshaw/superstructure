@@ -1,3 +1,9 @@
+## 2.2.1 (2023-08-02)
+
+### Fix
+
+- **atom-feed**: do not attempt to create feed if there are no dated articles
+
 ## 2.2.0 (2023-08-01)
 
 ### Feat
