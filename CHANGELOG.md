@@ -1,3 +1,9 @@
+## 2.2.2 (2023-08-02)
+
+### Fix
+
+- **npm**: fix problems flagged by npm audit
+
 ## 2.2.1 (2023-08-02)
 
 ### Fix
