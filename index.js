@@ -190,7 +190,6 @@ function extractMetadataFromArticle(article){
 	const firstParagraph = dom.window.document.querySelector("p")
 	const image = dom.window.document.querySelector("img")
 	const firstImage = (image && firstParagraph.contains(image)) ? image.src : "/favicon.png";
-	console.log([...dom.window.document.querySelectorAll("img")].map(img => img.src));
 	return {
 		imageURL: firstImage,
 		images: dom.window.document.querySelectorAll("img"),
@@ -315,6 +314,8 @@ async function generateAtom(config, templates, articles){
 	const datedArticles = articles
 		.filter(a => a.hasOwnProperty("created"))
 		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
+
+	if (datedArticles.length===0) return;
 
 	atom += `
   <title>${config.name}</title>
