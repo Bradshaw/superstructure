@@ -1,3 +1,9 @@
+## 3.0.0 (2023-08-03)
+
+### Feat
+
+- **feeds**: adds capability for arbitrary feeds (atom and rss provided)
+
 ## 2.2.2 (2023-08-02)
 
 ### Fix
