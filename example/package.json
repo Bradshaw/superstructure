@@ -10,6 +10,6 @@
   "author": "Gaeel Bradshaw",
   "license": "ISC",
   "dependencies": {
-    "superstructure": "^1.0.1"
+    "superstructure": "3.0.0"
   }
 }

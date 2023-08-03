@@ -9,6 +9,11 @@ const sass = require('node-sass');
 const pug = require('pug');
 const YAML = require('yaml');
 const sharp = require('sharp');
+
+const unescape = require('unescape');
+
+const utils = require('./utils');
+
 let md = require('markdown-it')({
 	html: true,
 	breaks: true,
@@ -57,6 +62,19 @@ const defaultConfig = {
 	articles: 'articles',
 	// Images types to make compressed versions of 
 	crunch: [".jpg",".png"],
+	// Feed formats to generate
+	feeds: [
+		{
+			template: "atom",
+			target: "atom.xml",
+			type: "application:atom+xml"
+		},
+		{
+			template: "rss",
+			target: "rss.xml",
+			type: "application:rss+xml"
+		}
+	],
 }
 
 async function walk(dir){
@@ -227,7 +245,6 @@ async function compileHtml(config, templates, articles){
 		// Load extracted article data into metadata
 		metadata = Object.assign(metadata, extractMetadataFromArticle(article));
 		// Load defaults into metadata
-		metadata.status = "published";
 		metadata.title = parsed.name
 			.split(/[ -]/)
 			.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
@@ -245,7 +262,7 @@ async function compileHtml(config, templates, articles){
 		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")){
 			metadata.updated = metadata.created;
 		}
-		
+		metadata.status = metadata.hasOwnProperty("created") ? "published" : "unpublished";
 		metadata.content = article;
 		articles.push(metadata);
 		const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
@@ -302,50 +319,18 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 	return fs.writeFile(target, html);
 }
 
-const imageRgx = /(<img src=")\/(.+?)(")/gm
 
-const urlRgx = /(<a href=")\/(.+?)(")/gm
-
-async function generateAtom(config, templates, articles){
-	const target = path.join(config.dest, "posts.atom");
-	let atom = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-		"<feed xmlns=\"http://www.w3.org/2005/Atom\">";
-
-	const datedArticles = articles
-		.filter(a => a.hasOwnProperty("created"))
-		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
-
-	if (datedArticles.length===0) return;
-
-	atom += `
-  <title>${config.name}</title>
-  <link href="${config.siteUrl}/posts.atom" rel="self"/>
-  <link href="${config.siteUrl}/posts" rel="alternate"/>
-  <updated>${datedArticles[0].created.toString()}</updated>
-  <author>
-    <name>${config.author.name}</name>
-    <email>${config.author.email}</email>
-  </author>
-  <id>${config.siteUrl}</id>`
-
-	for (const article of datedArticles){
-		if (article.status == "unpublished") continue;
-		let categories = "";
-		for (const tag of article.tags) {
-			categories += `<category term="${tag}" />`
-		}
-		atom += `  <entry>
-    <title>${article.title}</title>
-    <link href="${config.siteUrl}${article.url}"/>
-    <id>${article.url}</id>
-    <published>${article.created.toString()}</published>
-    <updated>${article.updated.toString()}</updated>
-    <summary>${article.preview}</summary>
-    <content type="html"><![CDATA[${article.content.replace(imageRgx, `$1${config.siteUrl}$2$3`).replace(urlRgx, `$1${config.siteUrl}$2$3`)}]]></content>
-    ${categories}
-  </entry>`
-	}
-	atom += "</feed>";
+async function generateFeed(feed, config, templates, articles){
+	const target = path.join(config.dest, feed.target);
+	let metadata = Object.assign({}, config);
+	metadata.articles = articles
+		.filter(article => article.status==="published")
+		.map(article => {
+			article.content = utils.replace_all_rel_by_abs(article.content, config.siteUrl);
+			return article;
+		});
+	metadata.feed = feed;
+	const atom = templates[feed.template](metadata);
 	return fs.writeFile(target, atom);
 }
 
@@ -373,7 +358,7 @@ async function generatePostsAndTags(config, templates, articles){
 	let promises = [];
 	for (const article of articles){
 		if (!article.tags) continue;
-		if (article.status == "unpublished") continue; 
+		if (article.status === "unpublished") continue;
 		for (const tag of article.tags){
 			if (!tags.hasOwnProperty(tag)){
 				tags[tag]=[];
@@ -466,7 +451,9 @@ let superstructure = {
 		promises.push(compileHtml(config, templates, articles)
 			.then(()=>{
 				generatePostsAndTags(config, templates, articles);
-				generateAtom(config, templates, articles);
+				for (const feed of config.feeds) {
+					generateFeed(feed, config, templates, articles);
+				}
 			}));
 		promises.push(copyPublic(config));
 		promises.push(crunchImages(config));

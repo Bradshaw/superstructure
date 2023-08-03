@@ -1,0 +1,55 @@
+-
+    var lastUpdated = articles.filter(article => article.status === "published").reduce(
+            (prev, current) => {
+                if (!prev.hasOwnProperty("updated")) return {updated: new Date(null)};
+                if (!current.hasOwnProperty("updated")) return prev;
+                return prev.updated > current.updated ? prev : current;
+            }
+    ).updated;
+doctype xml
+feed(xmlns="http://www.w3.org/2005/Atom")
+    title #{name}
+    link(href=siteUrl+'/'+feed.target, rel="self")
+    link(href=siteUrl+"/posts", rel="alternate")
+    updated #{lastUpdated}
+    author
+        name #{author.name}
+        if author.email
+            email #{author.email}
+        if author.link
+            link(href=author.link rel="self")
+    icon #{siteUrl}/favicon.png
+    logo #{siteUrl}/favicon.png
+    subtitle #{description}
+    id #{siteUrl}
+    each article in articles
+        entry
+            title #{article.title}
+            id #{article.url}
+            published #{article.created}
+            updated #{article.updated}
+            summary #{article.preview}
+            link #{siteUrl}#{article.url}
+            if article.tags
+                each tag in article.tags
+                    category(term=tag label=tag)
+            content(type="html") <![CDATA[#{article.content}]]>
+            if article.author
+                author
+                    name #{article.author.name}
+                    if article.author.email
+                        email #{article.author.email}
+                    if article.author.link
+                        link(href=article.author.link rel="self")
+            if article.contributors
+                each contributor in article.contributors
+                    contributor
+                        name #{contributor.name}
+                        if contributor.email
+                            email #{contributor.email}
+                        if contributor.link
+                            link(href=contributor.link rel="self")
+            if article.rights
+                rights #{article.rights}
+            else if rights
+                rights #{rights}

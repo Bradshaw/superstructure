@@ -1,6 +1,6 @@
 {
   "name": "superstructure",
-  "version": "2.1.0",
+  "version": "2.2.2",
   "description": "A website builder",
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "node-sass": "^8.0.0",
     "pug": "^3.0.2",
     "sharp": "^0.31.3",
+    "unescape": "^1.0.1",
     "yaml": "^1.10.2"
   }
 }
