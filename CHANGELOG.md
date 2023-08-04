@@ -1,3 +1,9 @@
+## 3.0.1 (2023-08-04)
+
+### Fix
+
+- **feeds**: fixes bug where all articles are marked as published
+
 ## 3.0.0 (2023-08-03)
 
 ### Feat
