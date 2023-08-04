@@ -258,11 +258,12 @@ async function compileHtml(config, templates, articles){
 				console.error(renderYamlError(e, file, yaml, markdown.split("\n").length));
 			}
 		}
-		
+		if (!metadata.hasOwnProperty("status")) {
+			metadata.status = metadata.hasOwnProperty("created") ? "published" : "unpublished";
+		}
 		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")){
 			metadata.updated = metadata.created;
 		}
-		metadata.status = metadata.hasOwnProperty("created") ? "published" : "unpublished";
 		metadata.content = article;
 		articles.push(metadata);
 		const html = templates[metadata.layout ? metadata.layout : "layout"](metadata)
