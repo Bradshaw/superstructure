@@ -1,3 +1,9 @@
+## 3.0.2 (2026-02-04)
+
+### Fix
+
+- fixes unawaited promises
+
 ## 3.0.1 (2023-08-04)
 
 ### Fix
