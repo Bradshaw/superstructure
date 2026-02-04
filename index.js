@@ -28,13 +28,13 @@ let md = require('markdown-it')({
 				.replace(/\s+/g, '-')
 		)
 	})
-	.use(require("markdown-it-external-links"),{
+	.use(require("markdown-it-external-links"), {
 		externalClassName: null,
 		internalClassName: null,
 		externalTarget: "_blank",
 	});
 
-const cwd =  process.cwd();
+const cwd = process.cwd();
 
 const defaultConfig = {
 	// Name of your website
@@ -61,7 +61,7 @@ const defaultConfig = {
 	// Your articles (written in Markdown)
 	articles: 'articles',
 	// Images types to make compressed versions of 
-	crunch: [".jpg",".png"],
+	crunch: [".jpg", ".png"],
 	// Feed formats to generate
 	feeds: [
 		{
@@ -77,53 +77,53 @@ const defaultConfig = {
 	],
 }
 
-async function walk(dir){
+async function walk(dir) {
 	let files = [];
 	const elems = await fs.readdir(dir);
 	for (const elem of elems) {
-		const stat = await fs.stat(path.join(dir,  elem));
+		const stat = await fs.stat(path.join(dir, elem));
 		if (stat.isDirectory()) {
-			files = files.concat(await walk(path.join(dir,  elem)));
+			files = files.concat(await walk(path.join(dir, elem)));
 		} else {
-			files.push(path.join(dir,  elem));
+			files.push(path.join(dir, elem));
 		}
 	}
 	return files;
 }
 
-async function copyPublic(config){
+async function copyPublic(config) {
 	const publicPath = path.join(config.root, config.public);
 	const files = await walk(publicPath);
 	let promises = [];
-	for (const file of files){
+	for (const file of files) {
 		const target = path.join(config.dest, file.replace(publicPath, ""));
 		const targetdir = path.parse(target).dir;
 		promises.push(fs.mkdir(targetdir, { recursive: true })
-			.then(()=>{
-				fs.copyFile(file, target)
+			.then(async () => {
+				await fs.copyFile(file, target);
 			}));
 	}
 	return promises;
 }
 
-async function crunchImages(config){
+async function crunchImages(config) {
 	const publicPath = path.join(config.root, config.public);
 	const files = await walk(publicPath);
 	let promises = [];
-	for (const file of files){
+	for (const file of files) {
 		const ext = path.extname(file);
-		if (config.crunch.includes(ext)){
-			const target = path.join(config.dest, file.replace(publicPath, "").replace(ext,".700w.jpg"));
+		if (config.crunch.includes(ext)) {
+			const target = path.join(config.dest, file.replace(publicPath, "").replace(ext, ".700w.jpg"));
 			const targetdir = path.parse(target).dir;
 			let promise = sharp(file)
 				.resize(700)
 				.jpeg()
 				.toBuffer();
 			promises.push(fs.mkdir(targetdir, { recursive: true })
-				.then(()=>{
-					promise
-						.then((crunched)=>{
-							fs.writeFile(target,  crunched);
+				.then(async () => {
+					await promise
+						.then(async (crunched) => {
+							await fs.writeFile(target, crunched);
 						})
 						.catch(e => {
 							console.error(`Error while crunching ${file}\n${e}`);
@@ -132,12 +132,12 @@ async function crunchImages(config){
 			promises.push(promise);
 		}
 	}
-	return promises;
+	return await Promise.all(promises);
 }
 
-function sassRenderPromise(options){
+function sassRenderPromise(options) {
 	return new Promise(((resolve, reject) => {
-		sass.render(options, (err, data)=>{
+		sass.render(options, (err, data) => {
 			if (err) {
 				reject(err);
 			} else {
@@ -147,64 +147,64 @@ function sassRenderPromise(options){
 	}));
 }
 
-function renderSassError(error, filename){
+function renderSassError(error, filename) {
 	let out = `Error on line ${error.line}, column ${error.column} in ${filename || error.filename}`;
 	const src = error.src.split('\n');
-	for (let line = Math.max(0,error.line-3); line<Math.min(src.length, error.line+3); line++){
-		if (line<error.line-1 || line>error.line-1) out += `\n${(""+line).padStart(5," ")}|${src[line].replace(/\t/g, "    ")}`;
-		else if (line===error.line-1) {
+	for (let line = Math.max(0, error.line - 3); line < Math.min(src.length, error.line + 3); line++) {
+		if (line < error.line - 1 || line > error.line - 1) out += `\n${("" + line).padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
+		else if (line === error.line - 1) {
 			out += `\n${("> " + line + "").padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
-			let dashes = "-".repeat(src[line].substr(0,error.column-1).replace(/\t/g, "    ").length);
+			let dashes = "-".repeat(src[line].substr(0, error.column - 1).replace(/\t/g, "    ").length);
 			out += `\n${"-".repeat(6)}${dashes}^`;
 		}
 	}
-	out += `\nError: ${(""+error).split('\n')[0]}`;
+	out += `\nError: ${("" + error).split('\n')[0]}`;
 	return out;
 }
 
-async function compileCss(config){
+async function compileCss(config) {
 	const cssPath = path.join(config.root, config.css);
 	const files = await walk(cssPath);
 	let promises = [];
-	for (const file of files){
+	for (const file of files) {
 		const parsed = path.parse(file);
 		const target = path.join(config.dest, file.replace(cssPath, "").replace(parsed.ext, '.css'));
 		const targetdir = path.parse(target).dir;
-		promises.push(fs.mkdir(targetdir, {recursive: true})
+		promises.push(fs.mkdir(targetdir, { recursive: true })
 			.then(() => {
 				promises.push(sassRenderPromise({
-						file: file,
-						options: {
-							indentedSyntax: true
-						}
+					file: file,
+					options: {
+						indentedSyntax: true
+					}
+				})
+					.then(async result => await fs.writeFile(target, result.css))
+					.catch(e => {
+						fs.readFile(file, { encoding: "utf8" })
+							.then(src => {
+								e.src = src;
+								console.error(renderSassError(e, file))
+							})
 					})
-						.then(result => promises.push(fs.writeFile(target, result.css)))
-						.catch(e => {
-							fs.readFile(file, {encoding: "utf8"})
-								.then(src => {
-									e.src = src;
-									console.error(renderSassError(e, file))
-								})
-						})
 				);
 			})
 			.catch(e => {
 				console.error(e)
 			})
 		);
-		
+
 	}
 	return Promise.all(promises);
 }
 
-function extractMetadataFromArticle(article){
+function extractMetadataFromArticle(article) {
 	const dom = new JSDOM(article);
 	const paragraphs = dom.window.document.getElementsByTagName("p")
 	let i = 0;
-	while (i<paragraphs.length && paragraphs[i].contains(dom.window.document.querySelector("img"))){
+	while (i < paragraphs.length && paragraphs[i].contains(dom.window.document.querySelector("img"))) {
 		i++;
 	}
-	const preview = i<paragraphs.length ? paragraphs[i].textContent : "No preview";
+	const preview = i < paragraphs.length ? paragraphs[i].textContent : "No preview";
 	const firstParagraph = dom.window.document.querySelector("p")
 	const image = dom.window.document.querySelector("img")
 	const firstImage = (image && firstParagraph.contains(image)) ? image.src : "/favicon.png";
@@ -215,31 +215,31 @@ function extractMetadataFromArticle(article){
 	}
 }
 
-function renderYamlError(error, filename, yaml, offset){
-	
-	let out = `Error in the YAML chunk of ${filename} on line ${error.linePos.start.line+offset-1}, column ${error.linePos.start.col}`;
-	const start = yaml.substr(0,error.range.start);
-	const middle = yaml.substr(error.range.start,error.range.end-error.range.start);
+function renderYamlError(error, filename, yaml, offset) {
+
+	let out = `Error in the YAML chunk of ${filename} on line ${error.linePos.start.line + offset - 1}, column ${error.linePos.start.col}`;
+	const start = yaml.substr(0, error.range.start);
+	const middle = yaml.substr(error.range.start, error.range.end - error.range.start);
 	const end = yaml.substr(error.range.end);
 	out += `\n${start}\x1b[31m\x1b[7m${middle}\x1b[0m${end}`;
-	out += `\n${(""+error).split('\n')[0]}`;
+	out += `\n${("" + error).split('\n')[0]}`;
 	return out;
 }
 
-async function compileHtml(config, templates, articles){
+async function compileHtml(config, templates, articles) {
 	const htmlPath = path.join(config.root, config.articles);
 	const files = await walk(htmlPath);
 	let promises = [];
-	for (const file of files){
+	for (const file of files) {
 		const parsed = path.parse(file);
 		const target = path.join(config.dest, file.replace(htmlPath, "").replace(parsed.ext, '.html'));
 		const targetdir = path.parse(target).dir;
-		const [markdown, yaml] = (await fs.readFile(file, {encoding: "utf-8"})).split(/(?=%YAML)/);
+		const [markdown, yaml] = (await fs.readFile(file, { encoding: "utf-8" })).split(/(?=%YAML)/);
 		const article = md.render(markdown);
-		
-		
+
+
 		let metadata = {}
-		
+
 		// Load config into metadata
 		metadata = Object.assign(metadata, config);
 		// Load extracted article data into metadata
@@ -247,13 +247,13 @@ async function compileHtml(config, templates, articles){
 		// Load defaults into metadata
 		metadata.title = parsed.name
 			.split(/[ -]/)
-			.map(s=>s.charAt(0).toUpperCase() + s.slice(1))
+			.map(s => s.charAt(0).toUpperCase() + s.slice(1))
 			.join(" ");
 		metadata.url = file.replace(htmlPath, '').replace(parsed.ext, '');
 		// Load parsed yaml into metadata
-		if (yaml){
+		if (yaml) {
 			try {
-				metadata = Object.assign(metadata, YAML.parse(yaml, {prettyErrors: true}));
+				metadata = Object.assign(metadata, YAML.parse(yaml, { prettyErrors: true }));
 			} catch (e) {
 				console.error(renderYamlError(e, file, yaml, markdown.split("\n").length));
 			}
@@ -261,7 +261,7 @@ async function compileHtml(config, templates, articles){
 		if (!metadata.hasOwnProperty("status")) {
 			metadata.status = metadata.hasOwnProperty("created") ? "published" : "unpublished";
 		}
-		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")){
+		if (metadata.hasOwnProperty("created") && !metadata.hasOwnProperty("updated")) {
 			metadata.updated = metadata.created;
 		}
 		metadata.content = article;
@@ -270,21 +270,21 @@ async function compileHtml(config, templates, articles){
 		let promise = fs.mkdir(targetdir, { recursive: true });
 		promises.push(promise);
 		promise
-			.then(()=>{
+			.then(() => {
 				promises.push(fs.writeFile(target, html))
 			});
 	}
 	return Promise.all(promises);
 }
 
-async function generateTagsPage(config, templates, tags){
+async function generateTagsPage(config, templates, tags) {
 	const target = path.join(config.dest, "tags.html");
 	let markdown = "# All tags"
 	const tagnames = Object.keys(tags)
-		.sort((a,b)=> tags[b].length - tags[a].length);
-	for (const tag of tagnames){
+		.sort((a, b) => tags[b].length - tags[a].length);
+	for (const tag of tagnames) {
 		const count = tags[tag].length;
-		markdown += `\n- [**${tag}** (${count} ${count!=1 ? "posts" : "post"})](/posts/${tag})`
+		markdown += `\n- [**${tag}** (${count} ${count != 1 ? "posts" : "post"})](/posts/${tag})`
 	}
 	let metadata = Object.assign({}, config);
 	metadata.title = "Tags";
@@ -293,9 +293,9 @@ async function generateTagsPage(config, templates, tags){
 	return fs.writeFile(target, html)
 }
 
-async function generateTaggedPostsPage(config, templates, articles, tag){
+async function generateTaggedPostsPage(config, templates, articles, tag) {
 	const target = path.join(config.dest, `posts/${tag}.html`);
-	let markdown = `# Posts tagged with ${tag.replace('-','‑')}`;
+	let markdown = `# Posts tagged with ${tag.replace('-', '‑')}`;
 	markdown += "\n[View all available tags](/tags)";
 	const datedArticles = articles
 		.filter(a => a.hasOwnProperty('tags') && a.tags.includes(tag))
@@ -304,12 +304,12 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 				a.created = -(a['sort-order'] || 0);
 			return a;
 		})
-		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
-	for (const article of datedArticles){
+		.sort((a, b) => new Date(b.created) - new Date(a.created));
+	for (const article of datedArticles) {
 		if (article.status == "unpublished") continue;
 		markdown += `\n# [${article.title}](${article.url})`;
 		markdown += `\n${article.preview}`;
-		if (typeof(article.create)=='object'){
+		if (typeof (article.create) == 'object') {
 			markdown += `<br /><span class="date">${dateFormat(new Date(article.created), "mmmm dS, yyyy")}</span>`;
 		}
 	}
@@ -321,11 +321,11 @@ async function generateTaggedPostsPage(config, templates, articles, tag){
 }
 
 
-async function generateFeed(feed, config, templates, articles){
+async function generateFeed(feed, config, templates, articles) {
 	const target = path.join(config.dest, feed.target);
 	let metadata = Object.assign({}, config);
 	metadata.articles = articles
-		.filter(article => article.status==="published")
+		.filter(article => article.status === "published")
 		.map(article => {
 			article.content = utils.replace_all_rel_by_abs(article.content, config.siteUrl);
 			return article;
@@ -335,13 +335,13 @@ async function generateFeed(feed, config, templates, articles){
 	return fs.writeFile(target, atom);
 }
 
-async function generatePostsPage(config, templates, articles){
+async function generatePostsPage(config, templates, articles) {
 	const target = path.join(config.dest, "posts.html");
 	let markdown = "[Filter by tag](/tags)";
 	const datedArticles = articles
 		.filter(a => a.hasOwnProperty("created"))
-		.sort((a,b)=> new Date(b.created) - new Date(a.created) );
-	for (const article of datedArticles){
+		.sort((a, b) => new Date(b.created) - new Date(a.created));
+	for (const article of datedArticles) {
 		if (article.status == "unpublished") continue;
 		markdown += `\n# [${article.title}](${article.url})`;
 		markdown += `\n${article.preview}`;
@@ -354,36 +354,36 @@ async function generatePostsPage(config, templates, articles){
 	return fs.writeFile(target, html);
 }
 
-async function generatePostsAndTags(config, templates, articles){
+async function generatePostsAndTags(config, templates, articles) {
 	let tags = {};
 	let promises = [];
-	for (const article of articles){
+	for (const article of articles) {
 		if (!article.tags) continue;
 		if (article.status === "unpublished") continue;
-		for (const tag of article.tags){
-			if (!tags.hasOwnProperty(tag)){
-				tags[tag]=[];
-			} 
+		for (const tag of article.tags) {
+			if (!tags.hasOwnProperty(tag)) {
+				tags[tag] = [];
+			}
 			tags[tag].push(article);
-		} 
+		}
 	}
 	await fs.mkdir(path.join(config.dest, "posts"), { recursive: true })
-	for (const tag of Object.keys(tags)){
+	for (const tag of Object.keys(tags)) {
 		promises.push(generateTaggedPostsPage(config, templates, articles, tag));
-	} 
+	}
 	promises.push(generatePostsPage(config, templates, articles));
 	promises.push(generateTagsPage(config, templates, tags));
 	return Promise.all(promises);
 }
 
-function renderPugError(error, filename){
+function renderPugError(error, filename) {
 	let out = `Error on line ${error.line}, column ${error.column} in ${filename || error.filename}`;
 	const src = error.src.split('\n');
-	for (let line = Math.max(0,error.line-3); line<Math.min(src.length, error.line+3); line++){
-		if (line<error.line-1 || line>error.line-1) out += `\n${(""+line).padStart(5," ")}|${src[line].replace(/\t/g, "    ")}`;
-		else if (line===error.line-1) {
+	for (let line = Math.max(0, error.line - 3); line < Math.min(src.length, error.line + 3); line++) {
+		if (line < error.line - 1 || line > error.line - 1) out += `\n${("" + line).padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
+		else if (line === error.line - 1) {
 			out += `\n${("> " + line + "").padStart(5, " ")}|${src[line].replace(/\t/g, "    ")}`;
-			let dashes = "-".repeat(src[line].substr(0,error.column-1).replace(/\t/g, "    ").length);
+			let dashes = "-".repeat(src[line].substr(0, error.column - 1).replace(/\t/g, "    ").length);
 			out += `\n${"-".repeat(6)}${dashes}^`;
 		}
 	}
@@ -391,12 +391,12 @@ function renderPugError(error, filename){
 	return out;
 }
 
-async function getTemplates(config){
+async function getTemplates(config) {
 	const templatePath = path.join(config.root, config.templates);
 	const files = await walk(templatePath);
 	let templates = {};
 	let templateData
-	for (const file of files){
+	for (const file of files) {
 		const templateFilename = path.parse(file).name
 		try {
 			templateData = await fs.readFile(file);
@@ -412,13 +412,13 @@ async function getTemplates(config){
 				throw renderPugError(err, file);
 			}
 		}
-		
+
 	}
 	return templates;
 }
 
 
-async function verifyAndPrepare(config){
+async function verifyAndPrepare(config) {
 	// Try to create destination directory
 	try {
 		await fs.mkdir(config.dest, { recursive: true });
@@ -433,33 +433,35 @@ async function verifyAndPrepare(config){
 		path.join(config.root, config.css),
 		path.join(config.root, config.articles),
 	]
-	for (const source of sources){
+	for (const source of sources) {
 		try {
 			await walk(source);
 		} catch (err) {
 			throw (`Could not read from source directory: ${source}\n${err}`);
 		}
-	} 
+	}
 }
 
 let superstructure = {
-	build: async (config)=>{
-		let promises = [];
+	build: async (config) => {
 		config = Object.assign(defaultConfig, config || {});
 		await verifyAndPrepare(config);
 		const templates = (await getTemplates(config));
 		let articles = [];
-		promises.push(compileHtml(config, templates, articles)
-			.then(()=>{
-				generatePostsAndTags(config, templates, articles);
+
+		return Promise.all([
+			copyPublic(config),
+			crunchImages(config),
+			compileCss(config),
+			compileHtml(config, templates, articles).then(async () => {
+				let promises = [];
 				for (const feed of config.feeds) {
-					generateFeed(feed, config, templates, articles);
+					promises.push(generateFeed(feed, config, templates, articles));
 				}
-			}));
-		promises.push(copyPublic(config));
-		promises.push(crunchImages(config));
-		promises.push(compileCss(config));
-		return Promise.all(promises);
+				promises.push(generatePostsAndTags(config, templates, articles))
+				await Promise.all(promises)
+			}),
+		]);
 	},
 	use_md: (plugin, opts) => {
 		md.use(plugin, opts);

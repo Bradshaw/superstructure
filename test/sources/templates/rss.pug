@@ -1,0 +1,44 @@
+-
+    var lastUpdated = articles.filter(article => article.status === "published").reduce(
+            (prev, current) => {
+                if (!prev.hasOwnProperty("updated")) return {updated: new Date(null)};
+                if (!current.hasOwnProperty("updated")) return prev;
+                return prev.updated > current.updated ? prev : current;
+            }
+    ).updated;
+doctype xml
+rss(version="2.0")
+    channel
+        title #{name}
+        link #{siteUrl}/posts
+        description #{description}
+        lastBuildDate #{lastUpdated}
+        image
+            url #{siteUrl}/favicon.png
+            title #{name}
+            link #{siteUrl}/posts
+            description #{description}
+        if language
+            language #{language}
+        if categories
+            each tag in categories
+                category #{tag}
+        each article in articles
+            item
+                title #{article.title}
+                guid #{article.url}
+                pubDate #{article.created}
+                source #{siteUrl}/#{feed.target}
+                link #{siteUrl}#{article.url}
+                description #{article.preview}
+                if article.author
+                    if article.author.email
+                        author #{article.author.email}
+                else if author.email
+                    author #{author.email}
+                if article.tags
+                    each tag in article.tags
+                        category #{tag}
+        if rights
+            copyright #{rights}
+        docs https://www.rssboard.org/rss-specification

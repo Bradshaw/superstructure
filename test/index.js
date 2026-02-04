@@ -23,6 +23,19 @@ const config = {
 	articles: 'articles',
 	// Images types to make compressed versions of 
 	crunch: [".jpg",".png"],
+	// Feed formats to generate
+	feeds: [
+		{
+			template: "atom",
+			target: "atom.xml",
+			type: "application:atom+xml"
+		},
+		{
+			template: "rss",
+			target: "rss.xml",
+			type: "application:rss+xml"
+		}
+	],
 };
 
 
